@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Download project
+      - name: Checkout project
         uses: actions/checkout@v4
 
       - name: Install Java
@@ -20,16 +20,25 @@ jobs:
           distribution: temurin
           java-version: '17'
 
+      - name: Install Android SDK
+        uses: android-actions/setup-android@v3
+
       - name: Install Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.7'
 
-      - name: Build Android APK
+      - name: Build APK
         run: |
-          if [ -f FXNexus3D/settings.gradle ]; then
-            cd FXNexus3D
+          SETTINGS=$(find . -name settings.gradle -not -path '*/.gradle/*' -print -quit)
+          if [ -z "$SETTINGS" ]; then
+            echo "ERROR: settings.gradle not found"
+            find . -maxdepth 4 -type f
+            exit 1
           fi
+          PROJECT_DIR=$(dirname "$SETTINGS")
+          echo "Building from $PROJECT_DIR"
+          cd "$PROJECT_DIR"
           gradle assembleDebug
 
       - name: Upload APK
